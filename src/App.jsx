@@ -1,20 +1,45 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-import conf from './conf/conf'
+import { useEffect, useState } from 'react';
+import './App.css';
+import { useDispatch } from 'react-redux';
+import authservice from './appwrite/auth';
+import { login, logout } from './store/authSlice';
+import { Footer, Header } from './component';
+
 function App() {
-  const [count, setCount] = useState(0)
-  // console.log(import.meta.env.VITE_APPWRITE_URL);
-  // console.log(import.meta.env.VITE_APPWRITE_PROJECT_ID);
-  // console.log(conf.appwritebucketid)
-  // console.log(conf.appwritecollectionid)
-  // console.log(conf.appwritedatabaseid)
-  // console.log(conf.appwriteprojectid)
-  // console.log(conf.appwriteurl)
-  return (<>
-  <h1>appwrite</h1>
-  </> )
+  const [loading, setLoading] = useState(true);
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    authservice.getCurrentUser()
+      .then((userdata) => {
+        if (userdata) {
+          dispatch(login(userdata));
+        } else {
+          dispatch(logout());
+        }
+      })
+      .catch((error) => {
+        // Ignore "Unauthorized" errors (no session)
+        if (error.code !== 401) {
+          console.error("Error fetching current user:", error);
+        }
+        dispatch(logout());
+      })
+      .finally(() => setLoading(false));
+  }, [dispatch]);
+
+  if (loading) {
+    return null; // You could replace this with a loader/spinner
+  }
+
+  return (
+    <div className="min-h-screen flex flex-wrap content-between bg-gray-400">
+      <div className="w-full block">
+        <Header />
+        <Footer />
+      </div>
+    </div>
+  );
 }
 
-export default App
+export default App;
